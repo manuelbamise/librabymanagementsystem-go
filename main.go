@@ -29,7 +29,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Static files
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	// Home page
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
