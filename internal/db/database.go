@@ -517,6 +517,12 @@ func (d *Database) GetAllUsersWithRoles() ([]models.User, error) {
 	return users, nil
 }
 
+func (d *Database) DeletePDF(id int) error {
+	query := `DELETE FROM pdfs WHERE id = ?`
+	_, err := d.db.Exec(query, id)
+	return err
+}
+
 func (d *Database) assignDefaultRoles() error {
 	// Get all users
 	query := `SELECT id FROM users`

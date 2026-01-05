@@ -64,6 +64,7 @@ func main() {
 	mux.HandleFunc("/library/view/", libraryHandler.AuthMiddleware(libraryHandler.ViewPDF))
 	mux.HandleFunc("/upload", libraryHandler.AuthMiddleware(libraryHandler.UploadForm))
 	mux.HandleFunc("/library/upload", libraryHandler.AuthMiddleware(libraryHandler.UploadPDF))
+	mux.HandleFunc("/library/delete", libraryHandler.AuthMiddleware(libraryHandler.DeletePDF))
 
 	// Admin routes (protected)
 	mux.HandleFunc("/admin", adminHandler.AuthMiddleware(adminHandler.Index))

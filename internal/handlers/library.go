@@ -40,6 +40,8 @@ func (h *LibraryHandler) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *LibraryHandler) Search(w http.ResponseWriter, r *http.Request) {
+	user := h.getUserFromContext(r.Context())
+
 	query := r.URL.Query().Get("q")
 	if query == "" {
 		query = r.FormValue("search")
@@ -59,7 +61,7 @@ func (h *LibraryHandler) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templates.PDFList(pdfs).Render(r.Context(), w)
+	templates.PDFList(pdfs, user).Render(r.Context(), w)
 }
 
 func (h *LibraryHandler) ViewPDF(w http.ResponseWriter, r *http.Request) {
@@ -260,6 +262,56 @@ func (h *LibraryHandler) requirePermission(permissionName string, next http.Hand
 
 		next.ServeHTTP(w, r)
 	}
+}
+
+func (h *LibraryHandler) DeletePDF(w http.ResponseWriter, r *http.Request) {
+	user := h.getUserFromContext(r.Context())
+
+	// Check delete permission
+	hasPerm, err := h.hasPermission(user, "delete_pdf")
+	if err != nil {
+		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
+		return
+	}
+	if !hasPerm {
+		http.Error(w, "Access denied", http.StatusForbidden)
+		return
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	idStr := r.FormValue("pdf_id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid PDF ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get PDF info for file deletion
+	pdf, err := h.db.GetPDFByID(id)
+	if err != nil {
+		http.Error(w, "PDF not found", http.StatusNotFound)
+		return
+	}
+
+	// Delete from database
+	err = h.db.DeletePDF(id)
+	if err != nil {
+		http.Error(w, "Failed to delete PDF", http.StatusInternalServerError)
+		return
+	}
+
+	// Delete file from filesystem
+	if err := os.Remove(pdf.FilePath); err != nil {
+		// Log error but don't fail the request
+		fmt.Printf("Failed to delete file %s: %v\n", pdf.FilePath, err)
+	}
+
+	// Redirect back to library
+	http.Redirect(w, r, "/library", http.StatusSeeOther)
 }
 
 func (h *LibraryHandler) isAdmin(user *models.User) bool {

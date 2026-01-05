@@ -180,37 +180,46 @@ templ LibraryIndex(pdfs []models.PDF, user *models.User) {
 		</div>
 		
 		<div id="pdf-list" class="pdf-grid">
-			@PDFList(pdfs)
+			@PDFList(pdfs, user)
 		</div>
 	}
 }
 
-templ PDFList(pdfs []models.PDF) {
+templ PDFList(pdfs []models.PDF, user *models.User) {
 	if len(pdfs) == 0 {
 		<div class="empty-state">
 			<p>No PDFs found. Upload your first PDF to get started!</p>
 		</div>
 	} else {
 		for _, pdf := range pdfs {
-			@PDFCard(pdf)
+			@PDFCard(pdf, user)
 		}
 	}
 }
 
-templ PDFCard(pdf models.PDF) {
-	<a href={ "/library/view/" + fmt.Sprintf("%d", pdf.ID) } class="pdf-card">
-		<div class="pdf-icon">📄</div>
-		<h3 class="pdf-title">{ pdf.Title }</h3>
-		if pdf.Author != "" {
-			<p class="pdf-author">By { pdf.Author }</p>
+templ PDFCard(pdf models.PDF, user *models.User) {
+	<div class="pdf-card-container">
+		<a href={ "/library/view/" + fmt.Sprintf("%d", pdf.ID) } class="pdf-card">
+			<div class="pdf-icon">📄</div>
+			<h3 class="pdf-title">{ pdf.Title }</h3>
+			if pdf.Author != "" {
+				<p class="pdf-author">By { pdf.Author }</p>
+			}
+			if pdf.Description != "" {
+				<p class="pdf-description">{ pdf.Description }</p>
+			}
+			<div class="pdf-meta">
+				<span class="pdf-date">Added { pdf.CreatedAt.Format("Jan 2, 2006") }</span>
+			</div>
+		</a>
+		if isAdmin(user) {
+			<form method="POST" action="/library/delete" class="delete-form" 
+				  onsubmit="return confirm('Are you sure you want to delete this PDF?')">
+				<input type="hidden" name="pdf_id" value={ fmt.Sprintf("%d", pdf.ID) }/>
+				<button type="submit" class="btn btn-danger btn-small">Delete</button>
+			</form>
 		}
-		if pdf.Description != "" {
-			<p class="pdf-description">{ pdf.Description }</p>
-		}
-		<div class="pdf-meta">
-			<span class="pdf-date">Added { pdf.CreatedAt.Format("Jan 2, 2006") }</span>
-		</div>
-	</a>
+	</div>
 }
 
 templ PDFViewer(pdf models.PDF, user *models.User) {

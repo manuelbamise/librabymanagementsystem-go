@@ -384,6 +384,37 @@ body {
   font-size: 0.9rem;
 }
 
+/* Delete Button */
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+.btn-small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.pdf-card-container {
+  position: relative;
+}
+
+.delete-form {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+}
+
+.pdf-card {
+  display: block;
+  position: relative;
+}
+
 /* Admin Interface */
 .admin-container {
   max-width: 1200px;
