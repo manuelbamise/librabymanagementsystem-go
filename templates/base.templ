@@ -29,11 +29,15 @@ templ Base(title string, user *models.User) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ title } - Library Management System</title>
 			<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+			<script>
+				htmx.config.boosted = true;
+				htmx.config.historyCacheSize = 10;
+			</script>
 			<link rel="stylesheet" href="/static/css/style.css"/>
 		</head>
 		<body>
 			@Navbar(user)
-			<main class="container">
+			<main class="container" hx-boost="true">
 				{ children... }
 			</main>
 		</body>
@@ -194,7 +198,7 @@ templ PDFList(pdfs []models.PDF) {
 }
 
 templ PDFCard(pdf models.PDF) {
-	<a href={ "/library/view/" + fmt.Sprintf("%d", pdf.ID) } class="pdf-card" hx-get={ "/library/view/" + fmt.Sprintf("%d", pdf.ID) } hx-target="#main-content" hx-push-url="true">
+	<a href={ "/library/view/" + fmt.Sprintf("%d", pdf.ID) } class="pdf-card">
 		<div class="pdf-icon">📄</div>
 		<h3 class="pdf-title">{ pdf.Title }</h3>
 		if pdf.Author != "" {
@@ -211,11 +215,11 @@ templ PDFCard(pdf models.PDF) {
 
 templ PDFViewer(pdf models.PDF, user *models.User) {
 	@Base(pdf.Title, user) {
-		<div id="main-content" class="pdf-viewer-container">
+		<div class="pdf-viewer-container">
 			<div class="pdf-header">
-				<button hx-get="/library" hx-target="#main-content" hx-push-url="true" class="btn btn-secondary">
+				<a href="/library" class="btn btn-secondary">
 					← Back to Catalog
-				</button>
+				</a>
 				<h1>{ pdf.Title }</h1>
 				if pdf.Author != "" {
 					<p class="pdf-author">By { pdf.Author }</p>
