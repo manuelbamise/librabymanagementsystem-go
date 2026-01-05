@@ -1,6 +1,9 @@
 library.db
+*library
+/library
 *.db
 
+/librarymanagementsystem
 *librarymanagementsystem
 static/uploads*
 static/uploads/*
