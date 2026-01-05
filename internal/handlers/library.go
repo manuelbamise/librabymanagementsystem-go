@@ -90,6 +90,18 @@ func (h *LibraryHandler) ViewPDF(w http.ResponseWriter, r *http.Request) {
 
 func (h *LibraryHandler) UploadForm(w http.ResponseWriter, r *http.Request) {
 	user := h.getUserFromContext(r.Context())
+
+	// Check upload permission
+	hasPerm, err := h.hasPermission(user, "upload_pdf")
+	if err != nil {
+		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
+		return
+	}
+	if !hasPerm {
+		http.Error(w, "Access denied: You don't have permission to upload PDFs", http.StatusForbidden)
+		return
+	}
+
 	templates.UploadPDF(user).Render(r.Context(), w)
 }
 
@@ -101,8 +113,19 @@ func (h *LibraryHandler) UploadPDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check upload permission
+	hasPerm, err := h.hasPermission(user, "upload_pdf")
+	if err != nil {
+		http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
+		return
+	}
+	if !hasPerm {
+		http.Error(w, "Access denied: You don't have permission to upload PDFs", http.StatusForbidden)
+		return
+	}
+
 	// Parse multipart form (max 32MB)
-	err := r.ParseMultipartForm(32 << 20)
+	err = r.ParseMultipartForm(32 << 20)
 	if err != nil {
 		http.Error(w, "Failed to parse form", http.StatusBadRequest)
 		return
@@ -190,8 +213,8 @@ func (h *LibraryHandler) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc 
 			return
 		}
 
-		// Add user to context
-		user, err := h.db.GetUserByID(session.UserID)
+		// Add user with roles to context
+		user, err := h.db.GetUserWithRoles(session.UserID)
 		if err != nil {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
@@ -207,4 +230,46 @@ func (h *LibraryHandler) getUserFromContext(ctx context.Context) *models.User {
 		return user
 	}
 	return nil
+}
+
+func (h *LibraryHandler) hasPermission(user *models.User, permissionName string) (bool, error) {
+	if user == nil {
+		return false, nil
+	}
+	return h.db.HasPermission(user.ID, permissionName)
+}
+
+func (h *LibraryHandler) requirePermission(permissionName string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := h.getUserFromContext(r.Context())
+		if user == nil {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		hasPerm, err := h.hasPermission(user, permissionName)
+		if err != nil {
+			http.Error(w, "Failed to check permissions", http.StatusInternalServerError)
+			return
+		}
+
+		if !hasPerm {
+			http.Error(w, "Access denied", http.StatusForbidden)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
+}
+
+func (h *LibraryHandler) isAdmin(user *models.User) bool {
+	if user == nil {
+		return false
+	}
+	for _, role := range user.Roles {
+		if role.Name == "admin" {
+			return true
+		}
+	}
+	return false
 }

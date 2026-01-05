@@ -24,6 +24,7 @@ func main() {
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(database, sessionManager)
 	libraryHandler := handlers.NewLibraryHandler(database, sessionManager)
+	adminHandler := handlers.NewAdminHandler(database, sessionManager)
 
 	// Setup routes
 	mux := http.NewServeMux()
@@ -63,6 +64,11 @@ func main() {
 	mux.HandleFunc("/library/view/", libraryHandler.AuthMiddleware(libraryHandler.ViewPDF))
 	mux.HandleFunc("/upload", libraryHandler.AuthMiddleware(libraryHandler.UploadForm))
 	mux.HandleFunc("/library/upload", libraryHandler.AuthMiddleware(libraryHandler.UploadPDF))
+
+	// Admin routes (protected)
+	mux.HandleFunc("/admin", adminHandler.AuthMiddleware(adminHandler.Index))
+	mux.HandleFunc("/admin/assign-role", adminHandler.AuthMiddleware(adminHandler.AssignRole))
+	mux.HandleFunc("/admin/remove-role", adminHandler.AuthMiddleware(adminHandler.RemoveRole))
 
 	// Start session cleanup goroutine
 	go func() {

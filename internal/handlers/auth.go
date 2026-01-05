@@ -181,8 +181,8 @@ func (h *AuthHandler) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Add user to context
-		user, err := h.db.GetUserByID(session.UserID)
+		// Add user with roles to context
+		user, err := h.db.GetUserWithRoles(session.UserID)
 		if err != nil {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
