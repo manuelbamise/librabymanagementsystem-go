@@ -24,7 +24,6 @@ A modern web application for uploading, organizing, and reading PDF documents bu
 
 ### Architecture
 - **MVC Pattern**: Clear separation of concerns
-- **Component-based Templates**: Reusable UI components
 - **Middleware**: Request authentication and validation
 - **Session Storage**: In-memory session management
 
