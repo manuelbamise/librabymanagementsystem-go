@@ -1,0 +1,233 @@
+package templates
+
+import (
+	"fmt"
+	"librarymanagementsystem/internal/models"
+)
+
+templ Base(title string, user *models.User) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title } - Library Management System</title>
+			<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+			<link rel="stylesheet" href="/css/style.css"/>
+		</head>
+		<body>
+			@Navbar(user)
+			<main class="container">
+				{ children... }
+			</main>
+		</body>
+	</html>
+}
+
+templ Navbar(user *models.User) {
+	<nav class="navbar">
+		<div class="nav-brand">
+			<a href="/">📚 Library</a>
+		</div>
+		<div class="nav-links">
+			if user != nil {
+				<a href="/library">Catalog</a>
+				<a href="/upload">Upload</a>
+				<span class="user-info">Welcome, { user.Username }</span>
+				<form method="POST" action="/auth/logout" class="logout-form">
+					<button type="submit" class="btn btn-secondary">Logout</button>
+				</form>
+			} else {
+				<a href="/login">Login</a>
+				<a href="/register">Register</a>
+			}
+		</div>
+	</nav>
+}
+
+templ Login() {
+	@Base("Login", nil) {
+		<div class="auth-container">
+			<h2>Login</h2>
+			<form method="POST" action="/auth/login" class="auth-form" hx-post="/auth/login" hx-target="#auth-errors" hx-swap="innerHTML">
+				<div class="form-group">
+					<label for="username">Username</label>
+					<input type="text" id="username" name="username" required/>
+				</div>
+				<div class="form-group">
+					<label for="password">Password</label>
+					<input type="password" id="password" name="password" required/>
+				</div>
+				<button type="submit" class="btn btn-primary">Login</button>
+			</form>
+			<div id="auth-errors" class="error-messages"></div>
+			<p class="auth-link">
+				Don't have an account? <a href="/register">Register here</a>
+			</p>
+		</div>
+	}
+}
+
+templ Register() {
+	@Base("Register", nil) {
+		<div class="auth-container">
+			<h2>Register</h2>
+			<form method="POST" action="/auth/register" class="auth-form" hx-post="/auth/register" hx-target="#auth-errors" hx-swap="innerHTML">
+				<div class="form-group">
+					<label for="username">Username</label>
+					<input type="text" id="username" name="username" required/>
+				</div>
+				<div class="form-group">
+					<label for="email">Email</label>
+					<input type="email" id="email" name="email" required/>
+				</div>
+				<div class="form-group">
+					<label for="password">Password</label>
+					<input type="password" id="password" name="password" required/>
+				</div>
+				<div class="form-group">
+					<label for="confirm-password">Confirm Password</label>
+					<input type="password" id="confirm-password" name="confirm-password" required/>
+				</div>
+				<button type="submit" class="btn btn-primary">Register</button>
+			</form>
+			<div id="auth-errors" class="error-messages"></div>
+			<p class="auth-link">
+				Already have an account? <a href="/login">Login here</a>
+			</p>
+		</div>
+	}
+}
+
+templ Landing() {
+	@Base("Welcome", nil) {
+		<div class="landing-container">
+			<div class="landing-hero">
+				<h1>📚 Library Management System</h1>
+				<p>Upload, organize, and read your PDF collection online</p>
+				<div class="landing-actions">
+					<a href="/register" class="btn btn-primary btn-large">Get Started</a>
+					<a href="/login" class="btn btn-secondary btn-large">Login</a>
+				</div>
+			</div>
+			
+			<div class="landing-features">
+				<div class="feature">
+					<div class="feature-icon">📤</div>
+					<h3>Upload PDFs</h3>
+					<p>Easily upload and organize your PDF documents</p>
+				</div>
+				<div class="feature">
+					<div class="feature-icon">🔍</div>
+					<h3>Search & Browse</h3>
+					<p>Find documents quickly with powerful search</p>
+				</div>
+				<div class="feature">
+					<div class="feature-icon">📖</div>
+					<h3>Read Online</h3>
+					<p>Read PDFs directly in your browser</p>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ LibraryIndex(pdfs []models.PDF, user *models.User) {
+	@Base("Library Catalog", user) {
+		<div class="library-header">
+			<h1>Library Catalog</h1>
+			<div class="library-actions">
+				<div class="search-container">
+					<input type="text" id="search" placeholder="Search PDFs..." 
+						hx-get="/library/search" 
+						hx-target="#pdf-list" 
+						hx-trigger="keyup changed delay:300ms"
+						class="search-input"/>
+				</div>
+				<a href="/upload" class="btn btn-primary">Upload PDF</a>
+			</div>
+		</div>
+		
+		<div id="pdf-list" class="pdf-grid">
+			@PDFList(pdfs)
+		</div>
+	}
+}
+
+templ PDFList(pdfs []models.PDF) {
+	if len(pdfs) == 0 {
+		<div class="empty-state">
+			<p>No PDFs found. Upload your first PDF to get started!</p>
+		</div>
+	} else {
+		for _, pdf := range pdfs {
+			@PDFCard(pdf)
+		}
+	}
+}
+
+templ PDFCard(pdf models.PDF) {
+	<a href={ "/library/view/" + fmt.Sprintf("%d", pdf.ID) } class="pdf-card" hx-get={ "/library/view/" + fmt.Sprintf("%d", pdf.ID) } hx-target="#main-content" hx-push-url="true">
+		<div class="pdf-icon">📄</div>
+		<h3 class="pdf-title">{ pdf.Title }</h3>
+		if pdf.Author != "" {
+			<p class="pdf-author">By { pdf.Author }</p>
+		}
+		if pdf.Description != "" {
+			<p class="pdf-description">{ pdf.Description }</p>
+		}
+		<div class="pdf-meta">
+			<span class="pdf-date">Added { pdf.CreatedAt.Format("Jan 2, 2006") }</span>
+		</div>
+	</a>
+}
+
+templ PDFViewer(pdf models.PDF, user *models.User) {
+	@Base(pdf.Title, user) {
+		<div id="main-content" class="pdf-viewer-container">
+			<div class="pdf-header">
+				<button hx-get="/library" hx-target="#main-content" hx-push-url="true" class="btn btn-secondary">
+					← Back to Catalog
+				</button>
+				<h1>{ pdf.Title }</h1>
+				if pdf.Author != "" {
+					<p class="pdf-author">By { pdf.Author }</p>
+				}
+			</div>
+			
+			<div class="pdf-content">
+				<iframe src={ "/static/uploads/" + pdf.Filename } 
+					class="pdf-iframe" 
+					title={ pdf.Title + " PDF viewer" }>
+				</iframe>
+			</div>
+		</div>
+	}
+}
+
+templ UploadPDF(user *models.User) {
+	@Base("Upload PDF", user) {
+		<div class="upload-container">
+			<h2>Upload PDF</h2>
+			<form method="POST" action="/library/upload" enctype="multipart/form-data" class="upload-form">
+				<div class="form-group">
+					<label for="title">Title *</label>
+					<input type="text" id="title" name="title" required/>
+				</div>
+				<div class="form-group">
+					<label for="author">Author</label>
+					<input type="text" id="author" name="author"/>
+				</div>
+				<div class="form-group">
+					<label for="description">Description</label>
+					<textarea id="description" name="description" rows="4"></textarea>
+				</div>
+				<div class="form-group">
+					<label for="file">PDF File *</label>
+					<input type="file" id="file" name="file" accept="application/pdf" required/>
+				</div>
+				<button type="submit" class="btn btn-primary">Upload PDF</button>
+			</form>
+		</div>
+	}
+}
