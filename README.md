@@ -28,11 +28,6 @@ A modern web application for uploading, organizing, and reading PDF documents bu
 - **Session Storage**: In-memory session management
 
 ## 🚀 Getting Started
-
-### Prerequisites
-- Go 1.21 or later
-- Basic understanding of web development
-
 ### Installation
 
 #### Quick Start (Recommended)
